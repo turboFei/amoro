@@ -38,12 +38,10 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
-import org.apache.iceberg.util.DateTimeUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.iceberg.util.StructLikeSet;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -63,7 +61,7 @@ public class KeyedTableDataView extends AbstractTableDataView {
 
   private final StructLikeMap<Record> view;
 
-  private final List<TestRecordWithAction> changeLog = new ArrayList<>();
+  private final List<RecordWithAction> changeLog = new ArrayList<>();
 
   private final RandomRecordGenerator generator;
 
@@ -131,11 +129,11 @@ public class KeyedTableDataView extends AbstractTableDataView {
 
   public WriteResult append(int count) throws IOException {
     Preconditions.checkArgument(count <= primaryUpperBound - view.size());
-    List<TestRecordWithAction> records = new ArrayList<>();
+    List<RecordWithAction> records = new ArrayList<>();
     for (int i = 0; i < primaryUpperBound; i++) {
       Record record = generator.randomRecord(i);
       if (!view.containsKey(record)) {
-        records.add(new TestRecordWithAction(record, ChangeAction.INSERT));
+        records.add(new RecordWithAction(record, ChangeAction.INSERT));
       }
       if (records.size() == count) {
         break;
@@ -146,29 +144,29 @@ public class KeyedTableDataView extends AbstractTableDataView {
 
   public WriteResult upsert(int count) throws IOException {
     List<Record> scatter = randomRecord(count);
-    List<TestRecordWithAction> upsert = new ArrayList<>();
+    List<RecordWithAction> upsert = new ArrayList<>();
     for (Record record : scatter) {
-      upsert.add(new TestRecordWithAction(record, ChangeAction.DELETE));
-      upsert.add(new TestRecordWithAction(record, ChangeAction.INSERT));
+      upsert.add(new RecordWithAction(record, ChangeAction.DELETE));
+      upsert.add(new RecordWithAction(record, ChangeAction.INSERT));
     }
     return doWrite(upsert);
   }
 
   public WriteResult cdc(int count) throws IOException {
     List<Record> scatter = randomRecord(count);
-    List<TestRecordWithAction> cdc = new ArrayList<>();
+    List<RecordWithAction> cdc = new ArrayList<>();
     for (Record record : scatter) {
       if (view.containsKey(record)) {
         if (random.nextBoolean()) {
           // delete
-          cdc.add(new TestRecordWithAction(view.get(record), ChangeAction.DELETE));
+          cdc.add(new RecordWithAction(view.get(record), ChangeAction.DELETE));
         } else {
           // update
-          cdc.add(new TestRecordWithAction(view.get(record), ChangeAction.UPDATE_BEFORE));
-          cdc.add(new TestRecordWithAction(record, ChangeAction.UPDATE_AFTER));
+          cdc.add(new RecordWithAction(view.get(record), ChangeAction.UPDATE_BEFORE));
+          cdc.add(new RecordWithAction(record, ChangeAction.UPDATE_AFTER));
         }
       } else {
-        cdc.add(new TestRecordWithAction(record, ChangeAction.DELETE));
+        cdc.add(new RecordWithAction(record, ChangeAction.DELETE));
       }
     }
     return doWrite(cdc);
@@ -176,9 +174,9 @@ public class KeyedTableDataView extends AbstractTableDataView {
 
   public WriteResult onlyDelete(int count) throws IOException {
     List<Record> scatter = randomRecord(count);
-    List<TestRecordWithAction> delete =
+    List<RecordWithAction> delete =
         scatter.stream()
-            .map(s -> new TestRecordWithAction(s, ChangeAction.DELETE))
+            .map(s -> new RecordWithAction(s, ChangeAction.DELETE))
             .collect(Collectors.toList());
     return doWrite(delete);
   }
@@ -190,10 +188,10 @@ public class KeyedTableDataView extends AbstractTableDataView {
   }
 
   public WriteResult custom(List<PKWithAction> data) throws IOException {
-    List<TestRecordWithAction> records = new ArrayList<>();
+    List<RecordWithAction> records = new ArrayList<>();
     for (PKWithAction pkWithAction : data) {
       records.add(
-          new TestRecordWithAction(generator.randomRecord(pkWithAction.pk), pkWithAction.action));
+          new RecordWithAction(generator.randomRecord(pkWithAction.pk), pkWithAction.action));
     }
     return doWrite(records);
   }
@@ -240,9 +238,9 @@ public class KeyedTableDataView extends AbstractTableDataView {
     return MatchResult.of(notInView, inViewButDuplicate, missInView);
   }
 
-  private WriteResult doWrite(List<TestRecordWithAction> upsert) throws IOException {
+  private WriteResult doWrite(List<RecordWithAction> upsert) throws IOException {
     writeView(upsert);
-    WriteResult writeResult = writeFile(new ArrayList<RecordWithAction>(upsert));
+    WriteResult writeResult = writeFile(upsert);
     upsertCommit(writeResult);
     return writeResult;
   }
@@ -301,8 +299,8 @@ public class KeyedTableDataView extends AbstractTableDataView {
     }
   }
 
-  private void writeView(List<TestRecordWithAction> records) {
-    for (TestRecordWithAction record : records) {
+  private void writeView(List<RecordWithAction> records) {
+    for (RecordWithAction record : records) {
       changeLog.add(record);
       ChangeAction action = record.getAction();
       if (action == ChangeAction.DELETE || action == ChangeAction.UPDATE_BEFORE) {
@@ -339,28 +337,6 @@ public class KeyedTableDataView extends AbstractTableDataView {
 
     protected final boolean alreadyExists(Record record) {
       return view.containsKey(record);
-    }
-  }
-
-  public static class TestRecordWithAction extends RecordWithAction {
-    public TestRecordWithAction(Record record, ChangeAction action) {
-      super(record, action);
-    }
-
-    @Override
-    public <T> T get(int pos, Class<T> javaClass) {
-      Object value = get(pos);
-      if (value instanceof LocalDateTime && javaClass == Long.class) {
-        @SuppressWarnings("unchecked")
-        T result = (T) (Long) DateTimeUtil.microsFromTimestamp((LocalDateTime) value);
-        return result;
-      } else if (value instanceof OffsetDateTime && javaClass == Long.class) {
-        @SuppressWarnings("unchecked")
-        T result =
-            (T) (Long) DateTimeUtil.microsFromTimestamp(((OffsetDateTime) value).toLocalDateTime());
-        return result;
-      }
-      return super.get(pos, javaClass);
     }
   }
 }

@@ -65,7 +65,20 @@ public class RecordWithAction implements Record {
 
   @Override
   public <T> T get(int pos, Class<T> javaClass) {
-    return record.get(pos, javaClass);
+    try {
+      return record.get(pos, javaClass);
+    } catch (Throwable e) {
+      System.out.println(
+          "pos: "
+              + pos
+              + ", javaClass: "
+              + javaClass.getName()
+              + ", valueClass:"
+              + get(pos).getClass().getName()
+              + ", "
+              + e.getMessage());
+      throw e;
+    }
   }
 
   @Override
