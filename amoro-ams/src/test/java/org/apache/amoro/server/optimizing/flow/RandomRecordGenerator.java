@@ -26,6 +26,7 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.DateTimeUtil;
 
 import javax.annotation.Nullable;
 
@@ -33,6 +34,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -137,7 +139,7 @@ public class RandomRecordGenerator {
       }
 
       if (partitionIds.contains(field.fieldId())) {
-        record.set(i, partitionValue.get(field.fieldId()));
+        record.set(i, longToLocalDateTimeMicros(partitionValue.get(field.fieldId()), field.type()));
         continue;
       }
 
@@ -195,5 +197,21 @@ public class RandomRecordGenerator {
       default:
         throw new RuntimeException("Unsupported type you can add them in code");
     }
+  }
+
+  private Object longToLocalDateTimeMicros(Object value, Type type) {
+    if (value instanceof Long) {
+      switch (type.typeId()) {
+        case TIMESTAMP:
+          LocalDateTime localDateTime = DateTimeUtil.timestampFromMicros((Long) value);
+          Types.TimestampType timestampType = (Types.TimestampType) type;
+          return timestampType.shouldAdjustToUTC()
+              ? localDateTime.atZone(ZoneOffset.UTC)
+              : localDateTime;
+        default:
+          return value;
+      }
+    }
+    return value;
   }
 }
