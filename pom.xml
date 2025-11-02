@@ -1499,6 +1499,7 @@
             <properties>
                 <spark.version>3.5.3</spark.version>
                 <spark.major.version>3.5</spark.major.version>
+                <iceberg.version>1.7.2</iceberg.version>
             </properties>
         </profile>
     </profiles>
