@@ -822,6 +822,18 @@
                         <artifactId>log4j</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-compress</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-httpclient</groupId>
+                        <artifactId>commons-httpclient</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.code.gson</groupId>
+                        <artifactId>gson</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>commons-logging</groupId>
                         <artifactId>commons-logging</artifactId>
                     </exclusion>
@@ -860,6 +872,10 @@
                     <exclusion>
                         <groupId>net.hydromatic</groupId>
                         <artifactId>aggdesigner-algorithm</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>stax</groupId>
+                        <artifactId>stax-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
