@@ -715,7 +715,6 @@
                 <artifactId>hive-exec</artifactId>
                 <version>${hive.version}</version>
                 <classifier>core</classifier>
-                <scope>test</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>com.google.guava</groupId>
@@ -876,6 +875,10 @@
                     <exclusion>
                         <groupId>stax</groupId>
                         <artifactId>stax-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.antlr</groupId>
+                        <artifactId>ST4</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
