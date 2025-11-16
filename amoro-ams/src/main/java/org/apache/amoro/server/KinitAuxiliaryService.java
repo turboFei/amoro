@@ -55,7 +55,8 @@ public class KinitAuxiliaryService {
         UserGroupInformation.loginUserFromKeytab(principal, keytab);
         Optional<String> krb5Conf =
             Optional.ofNullable(System.getProperty("java.security.krb5.conf"))
-                .or(() -> Optional.ofNullable(System.getenv("KRB5_CONFIG")));
+                .map(Optional::of)
+                .orElse(Optional.ofNullable(System.getenv("KRB5_CONFIG")));
         String[] commands = {"kinit", "-kt", keytab, principal};
         ProcessBuilder kinitProc = new ProcessBuilder(commands).inheritIO();
         krb5Conf.ifPresent(krb5Config -> kinitProc.environment().put("KRB5_CONFIG", krb5Config));
