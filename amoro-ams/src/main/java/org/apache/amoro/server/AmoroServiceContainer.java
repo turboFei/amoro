@@ -110,6 +110,7 @@ public class AmoroServiceContainer {
   private TServer optimizingServiceServer;
   private Javalin httpServer;
   private AmsServiceMetrics amsServiceMetrics;
+  private KinitAuxiliaryService kinitAuxiliaryService;
 
   public AmoroServiceContainer() throws Exception {
     initConfig();
@@ -127,6 +128,7 @@ public class AmoroServiceContainer {
                     service.dispose();
                     LOG.info("AMS service has been shut down");
                   }));
+      service.startKinitService();
       service.startRestServices();
       while (true) {
         try {
@@ -151,6 +153,11 @@ public class AmoroServiceContainer {
 
   public void waitFollowerShip() throws Exception {
     haContainer.waitFollowerShip();
+  }
+
+  public void startKinitService() throws Exception {
+    kinitAuxiliaryService = new KinitAuxiliaryService(serviceConfig);
+    kinitAuxiliaryService.start();
   }
 
   public void startRestServices() throws Exception {
@@ -248,9 +255,17 @@ public class AmoroServiceContainer {
     MetricManager.dispose();
   }
 
+  public void disposeKinitService() {
+    if (kinitAuxiliaryService != null) {
+      LOG.info("Stopping kinit service...");
+      kinitAuxiliaryService.stop();
+    }
+  }
+
   public void dispose() {
     disposeOptimizingService();
     disposeRestService();
+    disposeKinitService();
   }
 
   private void initConfig() throws Exception {

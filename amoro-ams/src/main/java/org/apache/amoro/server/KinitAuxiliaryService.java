@@ -28,7 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Optional;
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class KinitAuxiliaryService {
 
@@ -107,9 +108,5 @@ public class KinitAuxiliaryService {
         // do nothing
       }
     }
-  }
-
-  public boolean kinitEnabled() {
-    return null != kinitTask;
   }
 }
