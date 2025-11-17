@@ -41,6 +41,7 @@ import org.apache.amoro.server.manager.MetricManager;
 import org.apache.amoro.server.persistence.DataSourceFactory;
 import org.apache.amoro.server.persistence.HttpSessionHandlerFactory;
 import org.apache.amoro.server.persistence.SqlSessionFactoryProvider;
+import org.apache.amoro.server.authentication.KerberosAuthenticationFactory;
 import org.apache.amoro.server.resource.ContainerMetadata;
 import org.apache.amoro.server.resource.Containers;
 import org.apache.amoro.server.resource.DefaultOptimizerManager;
@@ -362,15 +363,26 @@ public class AmoroServiceContainer {
         serviceConfig.getInteger(AmoroManagementConf.THRIFT_QUEUE_SIZE_PER_THREAD);
     String bindHost = serviceConfig.getString(AmoroManagementConf.SERVER_BIND_HOST);
 
+    // Create the table management processor
     AmoroTableMetastore.Processor<AmoroTableMetastore.Iface> tableManagementProcessor =
         new AmoroTableMetastore.Processor<>(
             ThriftServiceProxy.createProxy(
                 AmoroTableMetastore.Iface.class,
                 new TableManagementService(catalogManager, tableManager),
                 AmoroRuntimeException::normalizeCompatibly));
+
+    // Wrap the processor with Kerberos authentication if enabled
+    TProcessor authenticatedTableManagementProcessor =
+        KerberosAuthenticationFactory.wrapWithKerberosAuthentication(
+            tableManagementProcessor, serviceConfig);
+
+    // Create the Thrift server with Kerberos authentication
+    TTransportFactory kerberosTransportFactory =
+        KerberosAuthenticationFactory.createKerberosTransportFactory(serviceConfig);
+
     tableManagementServer =
         createThriftServer(
-            tableManagementProcessor,
+            authenticatedTableManagementProcessor,
             Constants.THRIFT_TABLE_SERVICE_NAME,
             bindHost,
             serviceConfig.getInteger(AmoroManagementConf.TABLE_SERVICE_THRIFT_BIND_PORT),
@@ -378,7 +390,8 @@ public class AmoroServiceContainer {
                 workerThreads, getThriftThreadFactory(Constants.THRIFT_TABLE_SERVICE_NAME)),
             selectorThreads,
             queueSizePerSelector,
-            maxMessageSize);
+            maxMessageSize,
+            kerberosTransportFactory);
 
     OptimizingService.Processor<OptimizingService.Iface> optimizingProcessor =
         new OptimizingService.Processor<>(
@@ -396,7 +409,8 @@ public class AmoroServiceContainer {
                 getThriftThreadFactory(Constants.THRIFT_OPTIMIZING_SERVICE_NAME)),
             selectorThreads,
             queueSizePerSelector,
-            maxMessageSize);
+            maxMessageSize,
+            null); // Not adding Kerberos authentication to optimizing service
   }
 
   private TServer createThriftServer(
@@ -409,13 +423,40 @@ public class AmoroServiceContainer {
       int queueSizePerSelector,
       long maxMessageSize)
       throws TTransportException {
+    return createThriftServer(
+        processor,
+        processorName,
+        bindHost,
+        port,
+        executorService,
+        selectorThreads,
+        queueSizePerSelector,
+        maxMessageSize,
+        null);
+  }
+
+  private TServer createThriftServer(
+      TProcessor processor,
+      String processorName,
+      String bindHost,
+      int port,
+      ExecutorService executorService,
+      int selectorThreads,
+      int queueSizePerSelector,
+      long maxMessageSize,
+      TTransportFactory customTransportFactory)
+      throws TTransportException {
     LOG.info("Initializing thrift server: {}", processorName);
     LOG.info("Starting {} thrift server on port: {}", processorName, port);
     TNonblockingServerSocket serverTransport = getServerSocket(bindHost, port);
     final TProtocolFactory protocolFactory = new TBinaryProtocol.Factory();
     final TProtocolFactory inputProtoFactory =
         new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize);
-    TTransportFactory transportFactory = new TFramedTransport.Factory();
+
+    // Use the custom transport factory if provided, otherwise use the default
+    TTransportFactory transportFactory =
+        (customTransportFactory != null) ? customTransportFactory : new TFramedTransport.Factory();
+
     TMultiplexedProcessor multiplexedProcessor = new TMultiplexedProcessor();
     multiplexedProcessor.registerProcessor(processorName, processor);
     THsHaServer.Args args =
