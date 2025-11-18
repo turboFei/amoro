@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -44,13 +45,15 @@ public class ThriftClientPool<
   private final ThriftPingFactory pingFactory;
   private final GenericObjectPool<ThriftClient<T>> pool;
   private final PoolConfig<T> poolConfig;
+  private final Map<String, String> properties;
 
   public ThriftClientPool(
       String url,
       ThriftClientFactory factory,
       ThriftPingFactory pingFactory,
       PoolConfig<T> config,
-      String serviceName) {
+      String serviceName,
+      Map<String, String> properties) {
     if (url == null || url.isEmpty()) {
       throw new IllegalArgumentException("url is empty!");
     }
@@ -64,6 +67,7 @@ public class ThriftClientPool<
     this.clientFactory = factory;
     this.pingFactory = pingFactory;
     this.poolConfig = config;
+    this.properties = properties;
     // test if config change
     this.poolConfig.setTestOnReturn(true);
     this.poolConfig.setTestOnBorrow(true);

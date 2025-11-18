@@ -71,6 +71,8 @@ public class CatalogMetaProperties {
       TimeUnit.MINUTES.toMillis(5);
 
   public static final String AMS_URI = "ams.uri";
+  public static final String AMS_ATH_MODE = "ams.auth.mode";
+  public static final String AMS_AUTH_MODE_DEFAULT_VALUE = "NOSASL";
 
   // only used for engine properties
   public static final String LOAD_AUTH_FROM_AMS = "auth.load-from-ams";

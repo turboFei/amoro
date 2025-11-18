@@ -26,15 +26,26 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TMultiplexedProtocol;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Client pool cache for different ams optimize server, sharing in jvm. */
 public class OptimizingClientPools {
 
   private static final LoadingCache<String, ThriftClientPool<OptimizingService.Client>>
       CLIENT_POOLS = Caffeine.newBuilder().build(OptimizingClientPools::buildClient);
+  private static final ConcurrentHashMap<String, Map<String, String>> CLIENT_PROPERTIES =
+      new ConcurrentHashMap<>();
 
   public static OptimizingService.Iface getClient(String metastoreUrl) {
+    return Objects.requireNonNull(CLIENT_POOLS.get(metastoreUrl)).iface();
+  }
+
+  public static OptimizingService.Iface getClient(
+      String metastoreUrl, Map<String, String> properties) {
+    CLIENT_PROPERTIES.putIfAbsent(metastoreUrl, properties);
     return Objects.requireNonNull(CLIENT_POOLS.get(metastoreUrl)).iface();
   }
 
@@ -58,6 +69,7 @@ public class OptimizingClientPools {
           return true;
         },
         poolConfig,
-        Constants.THRIFT_OPTIMIZING_SERVICE_NAME);
+        Constants.THRIFT_OPTIMIZING_SERVICE_NAME,
+        CLIENT_PROPERTIES.getOrDefault(url, Collections.emptyMap()));
   }
 }

@@ -27,18 +27,31 @@ import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TMultiplexedProtocol;
 import org.apache.amoro.shade.thrift.org.apache.thrift.protocol.TProtocol;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /** Client pool cache for different ams server, sharing in jvm. */
 public class AmsClientPools {
 
   private static final LoadingCache<String, ThriftClientPool<AmoroTableMetastore.Client>>
       CLIENT_POOLS = Caffeine.newBuilder().build(AmsClientPools::buildClientPool);
+  private static final ConcurrentHashMap<String, Map<String, String>> CLIENT_PROPERTIES =
+      new ConcurrentHashMap<>();
 
   public static ThriftClientPool<AmoroTableMetastore.Client> getClientPool(String metastoreUrl) {
+    return getClientPool(metastoreUrl);
+  }
+
+  public static ThriftClientPool<AmoroTableMetastore.Client> getClientPool(
+      String metastoreUrl, Map<String, String> properties) {
+    CLIENT_PROPERTIES.putIfAbsent(metastoreUrl, properties);
     return CLIENT_POOLS.get(metastoreUrl);
   }
 
   public static void cleanAll() {
     CLIENT_POOLS.cleanUp();
+    CLIENT_PROPERTIES.clear();
   }
 
   @SuppressWarnings("unchecked")
@@ -61,6 +74,7 @@ public class AmsClientPools {
           return true;
         },
         poolConfig,
-        Constants.THRIFT_TABLE_SERVICE_NAME);
+        Constants.THRIFT_TABLE_SERVICE_NAME,
+        CLIENT_PROPERTIES.getOrDefault(url, Collections.emptyMap()));
   }
 }

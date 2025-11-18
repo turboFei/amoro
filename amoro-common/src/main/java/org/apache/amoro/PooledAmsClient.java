@@ -28,15 +28,22 @@ import org.apache.amoro.api.TableMeta;
 import org.apache.amoro.client.AmsClientPools;
 import org.apache.amoro.shade.thrift.org.apache.thrift.TException;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /** {@link AmsClient} implementation using client pool. */
 public class PooledAmsClient implements AmsClient {
   private final String metastoreUrl;
+  private final Map<String, String> metastoreProperties;
 
   public PooledAmsClient(String metastoreUrl) {
+    this(metastoreUrl, Collections.emptyMap());
+  }
+
+  public PooledAmsClient(String metastoreUrl, Map<String, String> metastoreProperties) {
     this.metastoreUrl = metastoreUrl;
+    this.metastoreProperties = metastoreProperties;
   }
 
   private AmoroTableMetastore.Iface getIface() {
