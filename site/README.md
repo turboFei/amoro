@@ -19,7 +19,7 @@
 
 # Apache Amoro Documentation Site
 
-This repository contains the documentation for [Apache Amoro](https://github.com/apache/amoro).
+This directory contains the documentation site for [Apache Amoro](https://github.com/apache/amoro).
 It's built with [Hugo](https://gohugo.io/) and hosted at https://amoro.apache.org.
 
 # Structure
@@ -30,45 +30,43 @@ documentation sites are completely self-contained in the `./amoro-site` and `./a
 
 ## Relationship to the Apache Amoro Repository
 
-All markdown pages that are specific to an Amoro version are maintained in the apache/amoro repository. All pages common across all version
-releases are kept here in the apache/amoro-site repo.
+All markdown pages that are specific to an Amoro version are maintained in the main apache/amoro repository. All pages common across all versions
+are kept in the site directory.
 
-`apache/amoro`
+`apache/amoro` (main repo)
 - The `docs` folder in the [Amoro repository](https://github.com/apache/amoro) contains all the markdown docs used by the **versioned** docs site.
 
-`apache/amoro-site`
-- The `amoro-docs/content` folder is the target folder when copying the docs over during a version release
-- The `amoro-site/content` folder is where you can find the common markdown files shared across all versions
+`apache/amoro` (site directory)
+- The `site/amoro-docs/content` folder is the target folder when copying the docs over during a version release
+- The `site/amoro-site/content` folder is where you can find the common markdown files shared across all versions
 
 During each new release, the release manager will:
-1. Create a branch in this repo from master named for the release version
-2. Copy the contents under `docs` in the amoro repo to `./amoro-docs/content` in the **release** branch
+1. Create a branch in the amoro repo from master named for the release version
+2. Copy the contents under `docs` in the amoro repo to `site/amoro-docs/content` in the **release** branch
 3. Update the latest branch HEAD to point to the release branch HEAD
 
 # How to Contribute
 
 ## Submitting Pull Requests
 
-Changes to the markdown contents for **version** specific pages should be submitted directly in the Amoro repository.
+Changes to the markdown contents for **version** specific pages should be submitted directly to the main Amoro repository in the `docs` directory.
 
-Changes to the markdown contents for common pages should be submitted to this repository against the `master` branch.
+Changes to the markdown contents for common pages should be submitted to the Amoro repository in the `site` directory against the `master` branch.
 
-Changes to the website appearance (e.g. HTML, CSS changes) should be submitted to this repository against the `master` branch.
+Changes to the website appearance (e.g. HTML, CSS changes) should be submitted to the Amoro repository in the `site` directory against the `master` branch.
 
-Changes to the documentation of old Amoro versions should be submitted to this repository against the specific version branch.
+Changes to the documentation of old Amoro versions should be submitted to the Amoro repository against the specific version branch.
 
 
 ## Reporting Issues
 
-All issues related to the doc website should still be submitted to the [Amoro repository](https://github.com/apache/amoro).
-The GitHub Issues feature of this repository is disabled.
+All issues related to the doc website should be submitted to the [Amoro repository](https://github.com/apache/amoro).
 
 ## Running Locally
 
-Clone this repository to run the website locally:
+To run the website locally, navigate to the site directory in the Amoro repository:
 ```shell
-git clone git@github.com:apache/amoro-site.git
-cd amoro-site
+cd site
 ```
 
 To start the site page site locally, run:
@@ -81,10 +79,10 @@ To start the documentation site locally, run:
 (cd amoro-docs && hugo serve)
 ```
 
-If you would like to see how the latest website looks based on the documentation in the Amoro repository, you can copy docs to this repository by:
+If you would like to see how the latest website looks based on the documentation in the Amoro repository, you can copy docs to the site directory by:
 ```shell
 rm -rf amoro-docs/content
-cp -r <path to amoro repo>/docs docs/content
+cp -r ../docs amoro-docs/content
 ```
 
 ## Scanning For Broken Links
