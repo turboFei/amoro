@@ -163,10 +163,19 @@ self-optimizing.quota = 10;
 An integer quota (e.g., 10) restricts the table to a specific number of optimizer resources.
 
 This flexible configuration prevents resource underutilization and allows users to tailor resource allocation to their needs.
+Quota defines the maximum CPU usage that a single table can use, but Self-optimizing is actually executed in a distributed manner, and actual resource
+usage is dynamically managed based on actual execution time.In the optimizing management Web UI, the dynamic quota usage of a single table can be
+viewed through the "Quota Occupy" metric. From a design perspective, the quota occupy metric should dynamically approach 100%.
 
 The `Quota` strategy schedules tables based on their Occupation metric, which is calculated as the ratio of the actual optimizer thread execution time used
 by a table to its quota execution time within the QUOTA_LOOK_BACK_TIME window. Tables with lower Occupation are given higher scheduling priority.
 
+In a platform, two situations may occur: overselling and overbuying.
+
+- Overselling — If all optimizer configurations exceed the total quota of all table configurations, the quota occupy metric may dynamically approach
+above 100%
+- Overbuying — If all optimizer configurations are lower than the total quota of all table configurations, the quota occupy metric should dynamically
+approach below 100%
 
 ### Balanced
 
