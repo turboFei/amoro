@@ -75,3 +75,8 @@ amoro-web/node/
 
 !dist/src/main/amoro-bin/bin/
 !dist/src/main/amoro-bin/conf/
+
+# Hugo generated directories
+site/public
+site/resources
+!javadoc/resources
