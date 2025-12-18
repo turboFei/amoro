@@ -42,7 +42,7 @@ public class AuthenticatedFileIOs {
       new ConcurrentHashMap<>();
 
   // Cache for recoverable FileIO instances with trash management
-  private static final ConcurrentHashMap<String, RecoverableHadoopFileIO>
+  private static final ConcurrentHashMap<FileIOCacheKey, RecoverableHadoopFileIO>
       RECOVERABLE_FILE_IO_CACHE = new ConcurrentHashMap<>();
 
   public static AuthenticatedHadoopFileIO buildRecoverableHadoopFileIO(
@@ -60,7 +60,7 @@ public class AuthenticatedFileIOs {
             TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
 
       // Create a cache key based on table identifier and location
-      String cacheKey = tableIdentifier.toString() + "|" + tableLocation;
+      FileIOCacheKey cacheKey = new FileIOCacheKey(tableIdentifier, tableLocation);
 
       // Check if we already have a cached instance
       RecoverableHadoopFileIO cachedIO = RECOVERABLE_FILE_IO_CACHE.get(cacheKey);

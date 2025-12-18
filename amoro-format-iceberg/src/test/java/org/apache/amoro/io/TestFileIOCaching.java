@@ -66,11 +66,8 @@ public class TestFileIOCaching extends TableTestBase {
 
   @Test
   public void testDifferentTableMetaStoresDifferentInstances() {
-    // Create another distinct TableMetaStore instance for testing different TableMetaStore instances
-    TableMetaStore otherMetaStore =
-        new TableMetaStore() {
-          // Distinct test-specific TableMetaStore instance; uses default/no-op behavior.
-        };
+    // Create another empty TableMetaStore instance for testing different TableMetaStore instances
+    TableMetaStore otherMetaStore = TableMetaStore.EMPTY;
 
     // Get FileIO instances from different TableMetaStores
     AuthenticatedHadoopFileIO fileIO1 = AuthenticatedFileIOs.buildHadoopFileIO(tableMetaStore);
@@ -139,5 +136,45 @@ public class TestFileIOCaching extends TableTestBase {
         "Should return the same instance when already an AuthenticatedFileIO",
         basicFileIO,
         adaptedFileIO);
+  }
+
+  @Test
+  public void testCacheKeyWithSpecialCharacters() {
+    // Set up table properties for FileIO
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put(TableProperties.ENABLE_TABLE_TRASH, "true");
+
+    // Create table identifiers and locations with pipe characters and other special characters
+    // to ensure the composite key approach properly handles these cases
+    TableIdentifier tableId1 = TableIdentifier.of("catalog|1", "db|1", "table|1");
+    String location1 = "/path/to/|table|location|1";
+
+    TableIdentifier tableId2 = TableIdentifier.of("catalog|1", "db|1", "table|2");
+    String location2 = "/path/to/|table|location|1";
+
+    // Get FileIO instances
+    AuthenticatedHadoopFileIO fileIO1 =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
+            tableId1, location1, tableProperties, tableMetaStore, new HashMap<>());
+
+    AuthenticatedHadoopFileIO fileIO2 =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
+            tableId1, location1, tableProperties, tableMetaStore, new HashMap<>());
+
+    AuthenticatedHadoopFileIO fileIO3 =
+        AuthenticatedFileIOs.buildRecoverableHadoopFileIO(
+            tableId2, location2, tableProperties, tableMetaStore, new HashMap<>());
+
+    // Verify same table ID and location return same instance
+    Assert.assertSame(
+        "FileIO instances should be the same for identical table ID and location even with pipe characters",
+        fileIO1,
+        fileIO2);
+
+    // Verify different table IDs return different instances even with same location
+    Assert.assertNotSame(
+        "FileIO instances should be different for different table IDs even with same location",
+        fileIO1,
+        fileIO3);
   }
 }
