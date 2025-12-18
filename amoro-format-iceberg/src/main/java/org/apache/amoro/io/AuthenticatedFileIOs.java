@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AuthenticatedFileIOs {
@@ -37,12 +38,55 @@ public class AuthenticatedFileIOs {
   private static final Logger LOG = LoggerFactory.getLogger(AuthenticatedFileIOs.class);
   public static final boolean CLOSE_TRASH = true;
 
+  /**
+   * Composite key for caching RecoverableHadoopFileIO instances. Combines table identifier and
+   * location into a single, collision-safe key.
+   */
+  private static class RecoverableFileIOCacheKey {
+    private final TableIdentifier tableIdentifier;
+    private final String tableLocation;
+
+    RecoverableFileIOCacheKey(TableIdentifier tableIdentifier, String tableLocation) {
+      this.tableIdentifier = tableIdentifier;
+      this.tableLocation = tableLocation;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      RecoverableFileIOCacheKey that = (RecoverableFileIOCacheKey) o;
+      return Objects.equals(tableIdentifier, that.tableIdentifier)
+          && Objects.equals(tableLocation, that.tableLocation);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(tableIdentifier, tableLocation);
+    }
+
+    @Override
+    public String toString() {
+      return "RecoverableFileIOCacheKey{"
+          + "tableIdentifier="
+          + tableIdentifier
+          + ", tableLocation='"
+          + tableLocation
+          + '\''
+          + '}';
+    }
+  }
+
   // Cache for FileIO instances at the catalog level - key is the TableMetaStore instance
   private static final ConcurrentHashMap<TableMetaStore, AuthenticatedHadoopFileIO> FILE_IO_CACHE =
       new ConcurrentHashMap<>();
 
   // Cache for recoverable FileIO instances with trash management
-  private static final ConcurrentHashMap<String, RecoverableHadoopFileIO>
+  private static final ConcurrentHashMap<RecoverableFileIOCacheKey, RecoverableHadoopFileIO>
       RECOVERABLE_FILE_IO_CACHE = new ConcurrentHashMap<>();
 
   public static AuthenticatedHadoopFileIO buildRecoverableHadoopFileIO(
@@ -59,8 +103,9 @@ public class AuthenticatedFileIOs {
             TableProperties.ENABLE_TABLE_TRASH,
             TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
 
-      // Create a cache key based on table identifier and location
-      String cacheKey = tableIdentifier.toString() + "|" + tableLocation;
+      // Create a composite cache key to avoid potential collisions
+      RecoverableFileIOCacheKey cacheKey =
+          new RecoverableFileIOCacheKey(tableIdentifier, tableLocation);
 
       // Check if we already have a cached instance
       RecoverableHadoopFileIO cachedIO = RECOVERABLE_FILE_IO_CACHE.get(cacheKey);
