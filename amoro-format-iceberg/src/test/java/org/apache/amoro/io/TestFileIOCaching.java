@@ -66,8 +66,11 @@ public class TestFileIOCaching extends TableTestBase {
 
   @Test
   public void testDifferentTableMetaStoresDifferentInstances() {
-    // Create another empty TableMetaStore instance for testing different TableMetaStore instances
-    TableMetaStore otherMetaStore = TableMetaStore.EMPTY;
+    // Create another distinct TableMetaStore instance for testing different instances
+    TableMetaStore otherMetaStore =
+        TableMetaStore.builder()
+            .withConfiguration(new org.apache.hadoop.conf.Configuration())
+            .build();
 
     // Get FileIO instances from different TableMetaStores
     AuthenticatedHadoopFileIO fileIO1 = AuthenticatedFileIOs.buildHadoopFileIO(tableMetaStore);
