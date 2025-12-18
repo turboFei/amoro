@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AuthenticatedFileIOs {
@@ -42,8 +43,40 @@ public class AuthenticatedFileIOs {
       new ConcurrentHashMap<>();
 
   // Cache for recoverable FileIO instances with trash management
-  private static final ConcurrentHashMap<String, RecoverableHadoopFileIO>
+  private static final ConcurrentHashMap<RecoverableFileIOCacheKey, RecoverableHadoopFileIO>
       RECOVERABLE_FILE_IO_CACHE = new ConcurrentHashMap<>();
+
+  /**
+   * Composite cache key for RecoverableHadoopFileIO instances. Combines table identifier and
+   * location to uniquely identify a table's FileIO instance.
+   */
+  private static class RecoverableFileIOCacheKey {
+    private final TableIdentifier tableIdentifier;
+    private final String tableLocation;
+
+    RecoverableFileIOCacheKey(TableIdentifier tableIdentifier, String tableLocation) {
+      this.tableIdentifier = tableIdentifier;
+      this.tableLocation = tableLocation;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      RecoverableFileIOCacheKey that = (RecoverableFileIOCacheKey) o;
+      return Objects.equals(tableIdentifier, that.tableIdentifier)
+          && Objects.equals(tableLocation, that.tableLocation);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(tableIdentifier, tableLocation);
+    }
+  }
 
   public static AuthenticatedHadoopFileIO buildRecoverableHadoopFileIO(
       TableIdentifier tableIdentifier,
@@ -60,7 +93,8 @@ public class AuthenticatedFileIOs {
             TableProperties.ENABLE_TABLE_TRASH_DEFAULT)) {
 
       // Create a cache key based on table identifier and location
-      String cacheKey = tableIdentifier.toString() + "|" + tableLocation;
+      RecoverableFileIOCacheKey cacheKey =
+          new RecoverableFileIOCacheKey(tableIdentifier, tableLocation);
 
       // Check if we already have a cached instance
       RecoverableHadoopFileIO cachedIO = RECOVERABLE_FILE_IO_CACHE.get(cacheKey);
