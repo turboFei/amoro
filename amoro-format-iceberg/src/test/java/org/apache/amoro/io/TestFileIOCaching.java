@@ -66,8 +66,7 @@ public class TestFileIOCaching extends TableTestBase {
 
   @Test
   public void testDifferentTableMetaStoresDifferentInstances() {
-    // Create another distinct TableMetaStore instance for testing different TableMetaStore
-    // instances
+    // Create another distinct TableMetaStore instance for testing different instances
     TableMetaStore otherMetaStore =
         TableMetaStore.builder()
             .withConfiguration(new org.apache.hadoop.conf.Configuration())
