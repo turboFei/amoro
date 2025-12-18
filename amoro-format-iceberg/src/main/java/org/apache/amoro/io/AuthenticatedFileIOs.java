@@ -47,8 +47,10 @@ public class AuthenticatedFileIOs {
     private final String tableLocation;
 
     RecoverableFileIOCacheKey(TableIdentifier tableIdentifier, String tableLocation) {
-      this.tableIdentifier = tableIdentifier;
-      this.tableLocation = tableLocation;
+      this.tableIdentifier =
+          java.util.Objects.requireNonNull(tableIdentifier, "tableIdentifier cannot be null");
+      this.tableLocation =
+          java.util.Objects.requireNonNull(tableLocation, "tableLocation cannot be null");
     }
 
     @Override
