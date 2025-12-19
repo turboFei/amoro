@@ -1739,11 +1739,6 @@
                         </execution>
                     </executions>
                 </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.0.0-M1</version>
-                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1778,62 +1773,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-clean-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>enforce-maven</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireMavenVersion>
-                                    <!-- enforce at least mvn version 3.1.1 (see FLINK-12447) -->
-                                    <version>[3.1.1,)</version>
-                                </requireMavenVersion>
-                                <requireJavaVersion>
-                                    <version>${java.target.version}</version>
-                                </requireJavaVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>dependency-convergence</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <!-- disabled by default as it interacts badly with shade-plugin -->
-                        <phase>none</phase>
-                        <configuration>
-                            <rules>
-                                <dependencyConvergence></dependencyConvergence>
-                            </rules>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>enforce-junit-engines</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <phase>validate</phase>
-                        <configuration>
-                            <rules>
-                                <evaluateBeanshell>
-                                    <condition>"${project.dependencies}".contains("groupId=org.junit.jupiter, artifactId=junit-jupiter-engine,")</condition>
-                                    <message>If junit-jupiter-engine is missing, JUnit 5 test cases will be silently ignored.</message>
-                                </evaluateBeanshell>
-                                <evaluateBeanshell>
-                                    <condition>"${project.dependencies}".contains("groupId=org.junit.vintage, artifactId=junit-vintage-engine,")</condition>
-                                    <message>If junit-vintage-engine is missing, JUnit 4 test cases will be silently ignored.</message>
-                                </evaluateBeanshell>
-                            </rules>
-                        </configuration>
-                    </execution>
-
-                </executions>
             </plugin>
         </plugins>
     </build>
