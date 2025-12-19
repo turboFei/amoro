@@ -1809,7 +1809,7 @@
                         <phase>none</phase>
                         <configuration>
                             <rules>
-                                <dependencyConvergence/>
+                                <dependencyConvergence></dependencyConvergence>
                             </rules>
                         </configuration>
                     </execution>
