@@ -72,7 +72,6 @@
     <properties>
         <java.source.version>11</java.source.version>
         <java.target.version>11</java.target.version>
-        <target.java.version>1.8</target.java.version>
         <maven.compiler.source>${java.source.version}</maven.compiler.source>
         <maven.compiler.target>${java.target.version}</maven.compiler.target>
         <maven.version>3.9.11</maven.version>
@@ -1796,7 +1795,7 @@
                                     <version>[3.1.1,)</version>
                                 </requireMavenVersion>
                                 <requireJavaVersion>
-                                    <version>${target.java.version}</version>
+                                    <version>${java.target.version}</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
