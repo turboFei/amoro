@@ -38,6 +38,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.DateTimeUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.iceberg.util.StructLikeSet;
 
@@ -268,8 +269,16 @@ public class KeyedTableDataView extends AbstractTableDataView {
         return true;
       } else if (o1 == null || o2 == null) {
         return false;
-      } else if (o1 instanceof OffsetDateTime) {
-        equals = ((OffsetDateTime) o1).isEqual((OffsetDateTime) o2);
+      } else if (o1 instanceof OffsetDateTime || o2 instanceof OffsetDateTime) {
+        if (o1 instanceof OffsetDateTime && o2 instanceof OffsetDateTime) {
+          equals = ((OffsetDateTime) o1).isEqual((OffsetDateTime) o2);
+        } else if (o1 instanceof Long) {
+          equals = (Long) o1 == DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o2);
+        } else if (o1 instanceof Long) {
+          equals = DateTimeUtil.microsFromTimestamptz((OffsetDateTime) o1) == (Long) o2;
+        } else {
+          equals = false;
+        }
       } else {
         equals = o1.equals(o2);
       }
